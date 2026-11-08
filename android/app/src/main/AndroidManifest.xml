@@ -1,0 +1,83 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:tools="http://schemas.android.com/tools">
+
+  <!-- Network: VoIP calls + API (no runtime prompt) -->
+  <uses-permission android:name="android.permission.INTERNET" />
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+  <!-- Runtime permissions (asked only through the explainer screens) -->
+  <uses-permission android:name="android.permission.RECORD_AUDIO" />
+  <uses-permission android:name="android.permission.READ_CONTACTS" />
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+  <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+  <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+  <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+  <!-- 29: Android 10 legacy storage needs WRITE to save recordings into Music/CallingKaro -->
+  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
+  <!-- Added by libraries but not used by CallingKaro - removed so Play review sees only what the app needs:
+       exact alarms (the spin reminder is inexact, WorkManager), full-screen intents (no incoming calls),
+       phone state (never requested). -->
+  <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" tools:node="remove" />
+  <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" tools:node="remove" />
+  <uses-permission android:name="android.permission.READ_PHONE_STATE" tools:node="remove" />
+
+  <!-- Normal permissions -->
+  <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+  <uses-permission android:name="android.permission.WAKE_LOCK" />
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+  <uses-permission android:name="android.permission.VIBRATE" />
+  <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
+
+  <application
+    android:name=".MainApplication"
+    android:label="@string/app_name"
+    android:icon="@mipmap/ic_launcher"
+    android:roundIcon="@mipmap/ic_launcher_round"
+    android:allowBackup="false"
+    android:theme="@style/AppTheme"
+    android:usesCleartextTraffic="${usesCleartextTraffic}"
+    android:supportsRtl="true"
+    android:requestLegacyExternalStorage="true">
+
+    <!-- AdMob app id comes from .env via react-native-config resValue (Google TEST id in dev) -->
+    <meta-data
+      android:name="com.google.android.gms.ads.APPLICATION_ID"
+      android:value="@string/ADMOB_APP_ID"
+      tools:replace="android:value" />
+
+    <activity
+      android:name=".MainActivity"
+      android:label="@string/app_name"
+      android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
+      android:launchMode="singleTask"
+      android:screenOrientation="portrait"
+      android:windowSoftInputMode="adjustResize"
+      android:exported="true"
+      android:theme="@style/BootTheme">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+      <!-- Deep links: callingkaro://wallet, callingkaro://spin, callingkaro://dial/+91... -->
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <data android:scheme="callingkaro" />
+      </intent-filter>
+    </activity>
+
+    <!-- The ongoing-call notification + foreground service (type microphone) come from the Twilio Voice SDK's VoiceService. -->
+    <!-- Telnyx calls: notifee's foreground service keeps the call + microphone alive in the background.
+         Notifee declares it as shortService (about 3 minutes on Android 14) - a call needs microphone. -->
+    <service
+      android:name="app.notifee.core.ForegroundService"
+      android:exported="false"
+      android:foregroundServiceType="microphone"
+      tools:replace="android:foregroundServiceType" />
+    <!-- react-native-webrtc's screen-sharing service: CallingKaro never shares the screen. -->
+    <service android:name="com.oney.WebRTCModule.MediaProjectionService" tools:node="remove" />
+  </application>
+</manifest>
