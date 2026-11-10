@@ -16,13 +16,13 @@ const MESSAGES = {
 export const useRewardedAd = ({ onRewarded } = {}) => {
   const [busy, setBusy] = useState(false);
   const watch = useCallback(
-    async (purpose = 'credits') => {
+    async (purpose = 'credits', opts = {}) => {
       if (busy) {
         return null;
       }
       setBusy(true);
       try {
-        const r = await showRewarded(purpose);
+        const r = await showRewarded(purpose, opts);
         if (r.status === 'rewarded') {
           onRewarded?.(r, purpose);
         } else if (MESSAGES[r.status]) {

@@ -8,7 +8,7 @@ import mobileAds, {
 import { CONFIG } from '@constants/config';
 import { createAdSession } from '@services/api/adsApi';
 import { getWallet } from '@services/api/walletApi';
-import { getSpinStatus } from '@services/api/spinApi';
+import { claimSpin, getSpinStatus } from '@services/api/spinApi';
 import { useWalletStore } from '@store/walletStore';
 import { useAuthStore } from '@store/authStore';
 import { isCallActive } from '@store/callStore';
@@ -29,6 +29,8 @@ const track = (type, extra) => {
   log.log(type, extra || '');
 };
 export const getAdEventLog = () => [...events];
+/** False where ad consent is required and was not given (Google forbids requesting ads then). */
+export const adsAllowed = () => canRequestAds;
 
 let initialized = null;
 let preloaded = null; // { purpose, ad, session, loadedAt }
@@ -81,10 +83,10 @@ export const showAdPrivacyOptions = async () => {
  * The SSV custom data ("userId:nonce") must be set when the ad is created, so each ad gets
  * a fresh server session. Returns a loaded ad or throws.
  */
-const createLoaded = (purpose, timeoutMs = 10000) =>
+const createLoaded = (purpose, timeoutMs = 10000, refId = undefined) =>
   new Promise((resolve, reject) => {
     (async () => {
-      const session = await createAdSession(purpose);
+      const session = await createAdSession(purpose, refId);
       const userId = useAuthStore.getState().user?.id;
       const ad = RewardedAd.createForAdRequest(UNIT_ID, {
         serverSideVerificationOptions: { userId, customData: session.customData },
@@ -135,7 +137,7 @@ const waitForReward = async (purpose, before) => {
   for (let i = 0; i < 10; i++) {
     await sleep(1000);
     try {
-      if (purpose === 'credits') {
+      if (purpose === 'credits' || purpose === 'spin_claim') {
         const w = await getWallet();
         if (w.credits > before) {
           useWalletStore.getState().setFromServer(w);
@@ -155,10 +157,11 @@ const waitForReward = async (purpose, before) => {
 };
 
 /**
- * Shows a rewarded ad. purpose: 'credits' (+250) | 'extra_spin'.
+ * Shows a rewarded ad. purpose: 'credits' (+250) | 'extra_spin' | 'spin_claim' (collects a won spin: opts.refId
+ * = spin id, opts.claimVia = 'ssv' (Google confirms) | 'app' (test ads: the app reports the watched ad)).
  * Result: { status: 'rewarded'|'pending'|'closed_early'|'no_fill'|'no_consent'|'in_call'|'limit'|'disabled', gained }
  */
-export const showRewarded = async (purpose = 'credits') => {
+export const showRewarded = async (purpose = 'credits', opts = {}) => {
   if (isCallActive()) {
     return { status: 'in_call', gained: 0 }; // never during / right before a call
   }
@@ -172,7 +175,7 @@ export const showRewarded = async (purpose = 'credits') => {
   }
   preloaded = null;
   try {
-    entry = entry || (await createLoaded(purpose));
+    entry = entry || (await createLoaded(purpose, undefined, opts.refId));
   } catch (e) {
     if (e?.code === 'AD_DAILY_CAP' || e?.code === 'SPIN_DAILY_CAP' || e?.status === 429) {
       return { status: 'limit', gained: 0, message: e.message };
@@ -185,7 +188,7 @@ export const showRewarded = async (purpose = 'credits') => {
 
   // Baseline from the SERVER (the cached balance may be stale -> a fake "+X credits").
   const before =
-    purpose === 'credits'
+    purpose === 'credits' || purpose === 'spin_claim'
       ? (await getWallet().catch(() => null))?.credits ?? useWalletStore.getState().credits
       : (await getSpinStatus().catch(() => ({ extraSpinsAvailable: 0 }))).extraSpinsAvailable;
 
@@ -223,6 +226,15 @@ export const showRewarded = async (purpose = 'credits') => {
   }
   if (!earned) {
     return { status: 'closed_early', gained: 0 };
+  }
+  if (purpose === 'spin_claim' && opts.claimVia === 'app') {
+    try {
+      const r = await claimSpin(opts.refId);
+      useWalletStore.getState().setBalance(r.balance);
+      return { status: 'rewarded', gained: r.credits };
+    } catch (e) {
+      return { status: 'pending', gained: 0, message: e.message };
+    }
   }
   const gained = await waitForReward(purpose, before);
   return { status: gained > 0 ? 'rewarded' : 'pending', gained };

@@ -26,6 +26,7 @@ import { toast } from '@components/common';
 import logger from '@utils/logger';
 import { connectTelnyx } from './telnyxCall';
 import { startCallService, stopCallService } from './callForeground';
+import { preloadInterstitial, showCallEndAd } from '@services/ads/interstitialAd';
 
 const log = logger.scope('voice');
 
@@ -253,6 +254,8 @@ const finish = async ({ error } = {}) => {
     summary: { talkSeconds, credits: estimate, balance: null, status, exact: false },
   });
   activeCall = null;
+  // Full-screen ad at the natural break after the call (rate-limited, never during a call).
+  showCallEndAd().catch(() => {});
 
   // Exact charge comes from the server (billed by the provider webhook).
   const wallet = await useWalletStore.getState().refresh();
@@ -410,6 +413,7 @@ export const startCall = async ({ number, name = null }) => {
   // 2) InCall screen right away
   navigate(ROUTES.IN_CALL);
   keepAwake(true);
+  preloadInterstitial().catch(() => {}); // ready by the time the call ends
 
   // 3) connect
   const connect = async t => {

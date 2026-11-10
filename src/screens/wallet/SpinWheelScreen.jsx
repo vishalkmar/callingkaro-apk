@@ -49,12 +49,22 @@ const SpinWheelScreen = () => {
     return () => clearInterval(id);
   }, []);
 
+  // A won prize that still needs its ad (just won, or left uncollected earlier).
+  const [claim, setClaim] = useState(null);
   const ad = useRewardedAd({
-    onRewarded: () => {
-      toast.success(t('spin.extraUnlocked'));
+    onRewarded: (r, purpose) => {
+      if (purpose === 'spin_claim') {
+        setClaim(null);
+        setResult({ credits: r.gained });
+        loadConfig().catch(() => {});
+      } else {
+        toast.success(t('spin.extraUnlocked'));
+      }
       loadStatus();
     },
   });
+  const collect = c => ad.watch('spin_claim', { refId: c.spinId, claimVia: c.claimVia });
+  const pendingClaim = status?.pendingClaim;
 
   const canSpin = !!status && (status.freeAvailable || status.extraSpinsAvailable > 0);
 
@@ -81,7 +91,11 @@ const SpinWheelScreen = () => {
         clearInterval(ticks);
       }
       setBalance(r.balance);
-      setResult(r);
+      if (r.claimRequired) {
+        setClaim(r); // prize decided: the ad comes first, the credits after it
+      } else {
+        setResult(r);
+      }
       busyRef.current = false;
       setSpinning(false);
       loadStatus();
@@ -149,6 +163,19 @@ const SpinWheelScreen = () => {
           </AppText>
         ) : null}
 
+        {pendingClaim && !claim && !spinning ? (
+          <AppButton
+            testID="spin-collect"
+            title={t('spin.claimPending', { credits: formatNumber(pendingClaim.credits) })}
+            icon="gift-outline"
+            uppercase={false}
+            loading={ad.busy}
+            disabled={ad.busy}
+            onPress={() => collect(pendingClaim)}
+            style={styles.adBtn}
+          />
+        ) : null}
+
         {status && !status.freeAvailable && !status.extraSpinsAvailable ? (
           <AppButton
             title={status.extraSpinsLeft > 0 ? t('spin.watchExtra', { n: status.extraSpinsLeft }) : t('spin.noExtra')}
@@ -168,6 +195,21 @@ const SpinWheelScreen = () => {
         subtitle={t('spin.added')}
         onHide={() => setResult(null)}
         duration={2400}
+      />
+      <AppModal
+        visible={!!claim}
+        icon="gift-outline"
+        title={t('spin.claimTitle', { credits: formatNumber(claim?.credits || 0) })}
+        message={t('spin.claimBody')}
+        primaryText={t('spin.claimWatch')}
+        secondaryText={t('spin.claimLater')}
+        onPrimary={() => {
+          const c = claim;
+          setClaim(null);
+          collect(c);
+        }}
+        onSecondary={() => setClaim(null)}
+        onClose={() => setClaim(null)}
       />
       <AppModal
         visible={!!result && result.credits === 0}

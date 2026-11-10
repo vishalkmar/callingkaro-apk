@@ -72,3 +72,15 @@ jest.mock('@notifee/react-native', () => ({
   AndroidForegroundServiceType: { FOREGROUND_SERVICE_TYPE_MICROPHONE: 128 },
   TriggerType: { TIMESTAMP: 0 },
 }));
+
+// Google Mobile Ads needs its native module: a default fake for every suite (suites can mock it again).
+jest.mock('react-native-google-mobile-ads', () => ({
+  __esModule: true,
+  default: () => ({ initialize: jest.fn(async () => {}) }),
+  AdEventType: { LOADED: 'loaded', ERROR: 'error', CLOSED: 'closed' },
+  RewardedAdEventType: { LOADED: 'rewarded_loaded', EARNED_REWARD: 'earned' },
+  TestIds: { REWARDED: 'test-rewarded', INTERSTITIAL: 'test-interstitial' },
+  AdsConsent: { gatherConsent: jest.fn(async () => ({ canRequestAds: true })), showPrivacyOptionsForm: jest.fn(), getConsentInfo: jest.fn(async () => ({})) },
+  RewardedAd: { createForAdRequest: jest.fn() },
+  InterstitialAd: { createForAdRequest: jest.fn() },
+}));

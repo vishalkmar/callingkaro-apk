@@ -71,6 +71,10 @@ jest.mock('@services/permissions/permissions', () => ({
 }));
 jest.mock('@services/recording/recordingService', () => ({ downloadForCall: jest.fn(async () => {}) }));
 jest.mock('@services/review/ratePrompt', () => ({ onSuccessfulCall: jest.fn() }));
+jest.mock('@services/ads/interstitialAd', () => ({
+  preloadInterstitial: jest.fn(async () => {}),
+  showCallEndAd: jest.fn(async () => 'shown'),
+}));
 
 const voiceService = require('@services/voice/voiceService').default;
 const { navigate } = require('@navigation/navigationRef');
@@ -111,6 +115,10 @@ describe('voiceService call state machine', () => {
     expect(row.status).toBe('completed');
     expect(row.creditsUsed).toBe(1017); // exact charge from the server replaces the local estimate
     expect(row.reconciled).toBe(true);
+    // full-screen ad: loaded while the call ran, shown once when it ended
+    const ads = require('@services/ads/interstitialAd');
+    expect(ads.preloadInterstitial).toHaveBeenCalled();
+    expect(ads.showCallEndAd).toHaveBeenCalledTimes(1);
   });
 
   test('server refuses the token -> no InCall screen, row marked failed', async () => {

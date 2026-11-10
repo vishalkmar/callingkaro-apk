@@ -92,7 +92,8 @@ jest.mock('react-native-google-mobile-ads', () => ({
   default: () => ({ initialize: jest.fn(async () => {}) }),
   AdEventType: {},
   RewardedAdEventType: {},
-  TestIds: { REWARDED: 'test' },
+  TestIds: { REWARDED: 'test', INTERSTITIAL: 'test-interstitial' },
+  InterstitialAd: { createForAdRequest: jest.fn(() => ({ addAdEventListener: jest.fn(() => jest.fn()), load: jest.fn(), show: jest.fn(async () => {}) })) },
   AdsConsent: { gatherConsent: jest.fn(async () => ({})), showPrivacyOptionsForm: jest.fn(async () => {}) },
   RewardedAd: { createForAdRequest: jest.fn() },
 }));

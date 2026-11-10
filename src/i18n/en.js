@@ -74,6 +74,11 @@ export default {
     historySub: 'Purchases, rewards and call charges',
   },
   spin: {
+    claimTitle: 'You won {credits} credits!',
+    claimBody: 'Watch a short ad to collect them.',
+    claimWatch: 'Watch ad & collect',
+    claimLater: 'Later',
+    claimPending: 'Collect your {credits} credits',
     title: 'Spin & Win',
     button: 'SPIN',
     a11ySpin: 'Spin the wheel',

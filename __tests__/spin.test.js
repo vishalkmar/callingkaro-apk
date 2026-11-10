@@ -143,9 +143,45 @@ describe('SpinWheelScreen (P18)', () => {
     );
     await act(async () => fireEvent.press(u.getByText(/Watch ad for extra spin \(4 left today\)/)));
     await flush();
-    expect(ads.showRewarded).toHaveBeenCalledWith('extra_spin');
+    expect(ads.showRewarded).toHaveBeenCalledWith('extra_spin', {});
     expect(u.getByText('1 extra spin(s) ready')).toBeTruthy();
     expect(u.getByTestId('spin-button').props.accessibilityState.disabled).toBe(false);
+  });
+
+  test('prize first, then "watch ad & collect": credits only after the ad', async () => {
+    spinApi.playSpin.mockResolvedValueOnce({
+      spinId: 'spin-1',
+      segmentIndex: 0,
+      credits: 5,
+      balance: 1000,
+      claimRequired: true,
+      claimVia: 'app',
+    });
+    ads.showRewarded.mockResolvedValueOnce({ status: 'rewarded', gained: 5 });
+    const u = render(<SpinWheelScreen />);
+    await flush();
+    await act(async () => fireEvent.press(u.getByTestId('spin-button')));
+    await flush();
+    expect(u.getByText('You won 5 credits!')).toBeTruthy(); // the prize, not yet added
+    expect(u.getByText('Watch a short ad to collect them.')).toBeTruthy();
+    expect(useWalletStore.getState().credits).toBe(1000);
+    await act(async () => fireEvent.press(u.getByText('WATCH AD & COLLECT')));
+    await flush();
+    expect(ads.showRewarded).toHaveBeenCalledWith('spin_claim', { refId: 'spin-1', claimVia: 'app' });
+    expect(u.getByText('Added to your balance')).toBeTruthy();
+  });
+
+  test('"Later" keeps the prize: a collect button stays until the ad is watched', async () => {
+    spinApi.getSpinStatus.mockImplementation(async () =>
+      mockStatus({ freeAvailable: false, pendingClaim: { spinId: 'spin-9', credits: 5, claimVia: 'ssv' } }),
+    );
+    ads.showRewarded.mockResolvedValueOnce({ status: 'pending', gained: 0 });
+    const u = render(<SpinWheelScreen />);
+    await flush();
+    await act(async () => fireEvent.press(u.getByTestId('spin-collect')));
+    await flush();
+    expect(ads.showRewarded).toHaveBeenCalledWith('spin_claim', { refId: 'spin-9', claimVia: 'ssv' });
+    expect(Toast.show).toHaveBeenCalledWith(expect.objectContaining({ text1: 'Reward is on its way' }));
   });
 
   test('Hindi labels', async () => {

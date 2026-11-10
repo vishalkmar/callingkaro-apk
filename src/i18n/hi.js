@@ -74,6 +74,11 @@ export default {
     historySub: 'खरीद, इनाम और कॉल का खर्च',
   },
   spin: {
+    claimTitle: 'आपने {credits} क्रेडिट जीते!',
+    claimBody: 'इन्हें पाने के लिए एक छोटा विज्ञापन देखें।',
+    claimWatch: 'विज्ञापन देखें और पाएं',
+    claimLater: 'बाद में',
+    claimPending: 'अपने {credits} क्रेडिट लें',
     title: 'स्पिन करें और जीतें',
     button: 'स्पिन',
     a11ySpin: 'व्हील घुमाएँ',
