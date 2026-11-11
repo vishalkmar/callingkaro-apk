@@ -154,7 +154,9 @@ const SpinWheelScreen = () => {
             : ' '}
         </AppText>
         <AppText center variant="caption" color="subtext">
-          {t('spin.upTo', { max: formatNumber(status?.maxWin ?? 0) })}
+          {status?.freeIntervalHours === 0
+            ? t('spin.upToAnyTime', { max: formatNumber(status?.maxWin ?? 0) })
+            : t('spin.upTo', { max: formatNumber(status?.maxWin ?? 0) })}
         </AppText>
         {status?.odds?.length ? (
           // Real chances from the server, shown next to the wheel (no hidden odds).

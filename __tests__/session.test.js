@@ -165,6 +165,45 @@ describe('P09.T08 / T11 bootstrap and logout (authService)', () => {
     expect(useAuthStore.getState().status).toBe('authenticated');
   });
 
+  test('sleeping server: the splash waits at most ~1.5 s, then the app opens; the late answer still applies', async () => {
+    await accept();
+    let answer;
+    handler = config =>
+      config.url === '/me'
+        ? new Promise(r => {
+            answer = () => r({ status: 200, data: { success: true, data: { user: { id: 'u1', email: 'late@x.in' } } } });
+          })
+        : { status: 200, data: { success: true, data: { credits: 1000 } } };
+    const t0 = Date.now();
+    expect(await authService.bootstrap()).toBe('main');
+    const waited = Date.now() - t0;
+    expect(waited).toBeGreaterThanOrEqual(authService.BOOT_ME_WAIT_MS - 50);
+    expect(waited).toBeLessThan(authService.BOOT_ME_WAIT_MS + 1000);
+    expect(useAuthStore.getState().status).toBe('authenticated');
+    answer();
+    await new Promise(r => setTimeout(r, 20));
+    expect(useAuthStore.getState().user.email).toBe('late@x.in');
+  });
+
+  test('sleeping server that later says "session expired" -> moved to login', async () => {
+    await accept();
+    axios.post.mockRejectedValue(
+      Object.assign(new Error('401'), { response: { status: 401, data: { code: 'REFRESH_REUSED' } } }),
+    );
+    let answer;
+    handler = config =>
+      config.url === '/me'
+        ? new Promise(r => {
+            answer = () => r({ status: 401, data: { success: false, code: 'NO_SESSION' } });
+          })
+        : { status: 401, data: { success: false, code: 'NO_SESSION' } };
+    expect(await authService.bootstrap()).toBe('main');
+    useAppStore.setState({ stage: 'main' });
+    answer();
+    await new Promise(r => setTimeout(r, 50));
+    expect(useAppStore.getState().stage).toBe('auth');
+  });
+
   test('no tokens -> auth', async () => {
     await accept();
     await clearTokens();

@@ -75,13 +75,14 @@ const EarnSection = ({ config, busy, onWatchAd, onSpin, onCheckin, onHistory }) 
       <EarnRow
         icon="play-circle-outline"
         title={t('wallet.watchAd')}
-        subtitle={`+${ads.rewardCredits ?? 250} credits - ${t('wallet.todayCount', {
-          x: ads.todayCount ?? 0,
-          max: ads.max ?? 20,
-        })}`}
+        subtitle={`+${ads.rewardCredits ?? 250} credits - ${
+          ads.unlimited || ads.max == null
+            ? t('wallet.noLimit')
+            : t('wallet.todayCount', { x: ads.todayCount ?? 0, max: ads.max })
+        }`}
         action={t('wallet.watch')}
         onAction={onWatchAd}
-        disabled={busy || (ads.remaining !== undefined && ads.remaining <= 0)}
+        disabled={busy || (ads.remaining != null && ads.remaining <= 0)}
       />
       <EarnRow
         icon="ferris-wheel"

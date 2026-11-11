@@ -111,9 +111,35 @@ const onBlocked = message => {
 setAuthHandlers({ onSessionExpired, onBlocked });
 
 // ---------- app start ----------
+// The splash waits at most this long for GET /me. A sleeping free server can take 15 s+ to answer: then the
+// app opens with the saved session at once and the /me answer is applied in the background when it comes.
+export const BOOT_ME_WAIT_MS = 1500;
+const SLOW = Symbol('slow');
+
+/** What GET /me said, applied whenever it arrives (during the splash or later). */
+const applyMe = async meCall => {
+  try {
+    const me = await meCall;
+    useAuthStore.getState().login({ user: me.user || me });
+    useWalletStore.getState().refresh();
+    return null;
+  } catch (e) {
+    if (e.code === 'USER_BLOCKED') {
+      return 'blocked';
+    }
+    if (e.status === 401) {
+      await clearSession();
+      return 'auth';
+    }
+    // Offline / server down: keep the session, show cached UI, retry later.
+    log.warn('bootstrap: /me failed, continuing offline', e.code);
+    return null;
+  }
+};
+
 /**
  * Decide the first stack: onboarding -> auth -> permissions -> main.
- * Tokens from Keychain are validated with GET /me, then the wallet is loaded.
+ * Tokens from Keychain are validated with GET /me (max BOOT_ME_WAIT_MS on the splash), then the wallet is loaded.
  */
 export const bootstrap = async () => {
   const { termsAccepted } = await getFlags();
@@ -125,21 +151,22 @@ export const bootstrap = async () => {
     useAuthStore.getState().logout();
     return 'auth';
   }
-  try {
-    const me = await authApi.getMe();
-    useAuthStore.getState().login({ user: me.user || me });
-    useWalletStore.getState().refresh();
-  } catch (e) {
-    if (e.code === 'USER_BLOCKED') {
-      return 'blocked';
-    }
-    if (e.status === 401) {
-      await clearSession();
-      return 'auth';
-    }
-    // Offline / server down: keep the session, show cached UI, retry later.
-    log.warn('bootstrap: /me failed, continuing offline', e.code);
+  const outcome = applyMe(authApi.getMe());
+  const early = await Promise.race([outcome, new Promise(r => setTimeout(() => r(SLOW), BOOT_ME_WAIT_MS))]);
+  if (early === 'blocked' || early === 'auth') {
+    return early;
+  }
+  if (early === SLOW || useAuthStore.getState().status !== 'authenticated') {
+    // Not confirmed yet (slow / offline): open with the saved session now.
     useAuthStore.setState({ status: 'authenticated', hasTokens: true });
+  }
+  if (early === SLOW) {
+    // A late "session gone" / "blocked" still moves the user to the right screen.
+    outcome.then(late => {
+      if (late) {
+        useAppStore.getState().setStage(late);
+      }
+    });
   }
   return stageAfterLogin();
 };
