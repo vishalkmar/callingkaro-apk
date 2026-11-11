@@ -59,7 +59,7 @@ const useCountdown = target => {
   return target ? formatCountdown(target, now) : null;
 };
 
-/** Watch ad (+250, x/20 today), Spin the wheel (free / countdown), Daily check-in, Wallet history. */
+/** Watch ad (+10-50 random, no daily limit), Spin the wheel, Daily check-in, Wallet history. */
 const EarnSection = ({ config, busy, onWatchAd, onSpin, onCheckin, onHistory }) => {
   const ads = config?.ads || {};
   const spin = config?.spin || {};
@@ -75,7 +75,11 @@ const EarnSection = ({ config, busy, onWatchAd, onSpin, onCheckin, onHistory }) 
       <EarnRow
         icon="play-circle-outline"
         title={t('wallet.watchAd')}
-        subtitle={`+${ads.rewardCredits ?? 250} credits - ${
+        subtitle={`+${
+          ads.rewardMin != null && ads.rewardMax != null && ads.rewardMax > ads.rewardMin
+            ? `${ads.rewardMin}-${ads.rewardMax}`
+            : ads.rewardCredits ?? 50
+        } credits - ${
           ads.unlimited || ads.max == null
             ? t('wallet.noLimit')
             : t('wallet.todayCount', { x: ads.todayCount ?? 0, max: ads.max })

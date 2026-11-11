@@ -29,7 +29,11 @@ const RecentScreen = () => {
   const [monthSeconds, setMonthSeconds] = useState(0);
   const [menu, setMenu] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
-  const adCredits = useWalletStore(s => s.config?.ads?.rewardCredits) || 250;
+  const adsCfg = useWalletStore(s => s.config?.ads);
+  const adCredits =
+    adsCfg?.rewardMin != null && adsCfg?.rewardMax > adsCfg?.rewardMin
+      ? `${adsCfg.rewardMin}-${adsCfg.rewardMax}`
+      : adsCfg?.rewardCredits || 50;
   const pendingDelete = useRef(null);
 
   useEffect(() => {

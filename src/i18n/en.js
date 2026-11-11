@@ -247,7 +247,7 @@ export default {
     q1: 'How do credits work?',
     a1: '1000 credits = 1 minute of talk time, charged per second. Example: 2 min 15 sec costs 2,250 credits. You need at least 1000 credits (1 minute) to start a call. Calls that are not answered, busy or failed are free.',
     q2: 'How do I get free credits?',
-    a2: 'Watch a rewarded video ad (+250 credits, up to 20 a day), spin the wheel once every 24 hours (small credit prizes - the chances are shown on the wheel screen) and claim the daily check-in. New accounts get a welcome bonus.',
+    a2: 'Watch rewarded video ads (10 to 50 credits each, as many as you like), spin the wheel as often as you like and collect each prize with a short ad (the chances are shown on the wheel screen), and claim the daily check-in. New accounts get a welcome bonus.',
     q3: 'Why did my call fail?',
     a3: 'Common reasons: weak internet (try Wi-Fi or 4G), the number is switched off / busy / invalid, not enough credits, or emergency / short numbers (100, 112, 1xx) which must be dialled from your phone dialer.',
     q4: 'What number does the other person see?',
