@@ -281,8 +281,10 @@ export default {
   about: {
     title: 'About',
     version: 'Version {v} (build {b})',
-    terms: 'Terms of Use',
+    terms: 'Terms and Conditions',
     privacy: 'Privacy Policy',
+    refund: 'Refund and Cancellation Policy',
+    contact: 'Contact us',
     licenses: 'Open-source licenses',
   },
   crash: {

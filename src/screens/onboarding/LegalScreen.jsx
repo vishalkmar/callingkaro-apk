@@ -3,13 +3,15 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { AppHeader, AppText, ScreenContainer } from '@components/common';
 import { colors, spacing } from '@theme';
-import { TERMS_OF_USE, PRIVACY_POLICY } from '@constants/legal';
+import { TERMS_OF_USE, PRIVACY_POLICY, REFUND_POLICY } from '@constants/legal';
 
-/** Renders Privacy Policy or Terms of Use from the local JS file (route param doc = 'privacy' | 'terms'). */
+const DOCS = { terms: TERMS_OF_USE, privacy: PRIVACY_POLICY, refund: REFUND_POLICY };
+
+/** Renders Privacy Policy or Terms of Use from the local JS file (route param doc = 'privacy' | 'terms' | 'refund'). */
 const LegalScreen = () => {
   const navigation = useNavigation();
   const { params } = useRoute();
-  const doc = params?.doc === 'privacy' ? PRIVACY_POLICY : TERMS_OF_USE;
+  const doc = DOCS[params?.doc] || TERMS_OF_USE;
 
   return (
     <ScreenContainer statusBarColor={colors.primary}>

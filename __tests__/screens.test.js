@@ -118,7 +118,8 @@ beforeAll(async () => {
 const SCREENS = [
   ['Splash', () => require('@screens/onboarding/SplashScreen').default, {}, 'CallingKaro'],
   ['Welcome', () => require('@screens/onboarding/WelcomeScreen').default, {}, 'OK'],
-  ['Legal (terms)', () => require('@screens/onboarding/LegalScreen').default, { doc: 'terms' }, 'Terms of Use'],
+  ['Legal (terms)', () => require('@screens/onboarding/LegalScreen').default, { doc: 'terms' }, 'Terms and Conditions'],
+  ['Legal (refund)', () => require('@screens/onboarding/LegalScreen').default, { doc: 'refund' }, 'Refund and Cancellation'],
   ['Legal (privacy)', () => require('@screens/onboarding/LegalScreen').default, { doc: 'privacy' }, 'Privacy Policy'],
   ['EmailEntry', () => require('@screens/auth/EmailEntryScreen').default, {}, 'SEND OTP'],
   [

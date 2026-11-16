@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import DeviceInfo from 'react-native-device-info';
 import { AppHeader, AppLogo, AppText, ScreenContainer } from '@components/common';
@@ -8,11 +8,12 @@ import { t } from '@i18n';
 import { colors, spacing } from '@theme';
 import { CONFIG } from '@constants/config';
 import { ROUTES } from '@constants/routes';
+import { BUSINESS } from '@constants/legal';
 
 const LICENSES =
   'React Native, React Navigation, Zustand, Axios, libphonenumber-js, op-sqlite, Twilio Voice RN SDK, Google Mobile Ads, react-native-iap, Reanimated, SVG, Gesture Handler, Material Design Icons (Apache 2.0) and other MIT/Apache-licensed libraries. Full list: see the app repository (package.json).';
 
-/** Version, build number, Terms, Privacy, open-source licenses. */
+/** Version, build number, Terms, Privacy, Refund policy, contact details, open-source licenses. */
 const AboutScreen = () => {
   const navigation = useNavigation();
   return (
@@ -37,6 +38,28 @@ const AboutScreen = () => {
           icon="shield-lock-outline"
           title={t('about.privacy')}
           onPress={() => navigation.navigate(ROUTES.LEGAL, { doc: 'privacy' })}
+        />
+        <SettingsRow
+          icon="cash-refund"
+          title={t('about.refund')}
+          onPress={() => navigation.navigate(ROUTES.LEGAL, { doc: 'refund' })}
+        />
+        <View style={styles.licenses}>
+          <AppText variant="label">{t('about.contact')}</AppText>
+          <AppText variant="caption" color="subtext" style={styles.text}>
+            {`${BUSINESS.brand} - ${BUSINESS.owner} (${BUSINESS.type})
+${BUSINESS.address}`}
+          </AppText>
+        </View>
+        <SettingsRow
+          icon="email-outline"
+          title={BUSINESS.email}
+          onPress={() => Linking.openURL(`mailto:${BUSINESS.email}`)}
+        />
+        <SettingsRow
+          icon="phone-outline"
+          title={BUSINESS.phone}
+          onPress={() => Linking.openURL(`tel:${BUSINESS.phone.replace(/s/g, '')}`)}
         />
         <View style={styles.licenses}>
           <AppText variant="label">{t('about.licenses')}</AppText>
